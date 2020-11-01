@@ -8,7 +8,7 @@ class Patient(Base):
     did = Column(Integer, ForeignKey('doctor.id'))
     rid = Column(Integer, ForeignKey('room.id'))
     oid = Column(Integer, ForeignKey('office.id'))
-    history_number = Column(String(20))
+    history_number = Column(String(20), unique=True)
     name = Column(String(6))
     gender = Column(Integer)
     age = Column(Integer)

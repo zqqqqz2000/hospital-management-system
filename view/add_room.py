@@ -55,8 +55,12 @@ class AddRoom:
         self.office_name_com.pack(side=LEFT)
 
         # 提交按钮
-        commit_button = Button(self.page, text='提交', command=self.insert_room)
-        commit_button.pack(side=TOP)
+        btn_frame = Frame(self.page)
+        commit_button = Button(btn_frame, text='提交', command=self.insert_room)
+        commit_button.pack(side=LEFT)
+        commit_button = Button(btn_frame, text='修改', command=self.change)
+        commit_button.pack(side=LEFT)
+        btn_frame.pack(side=TOP)
         # 表格
         self.tb = ttk.Treeview(self.page, columns=('0', '1', '2', '3'), show="headings")
         self.tb.column("0", width=50, anchor='center')
@@ -127,10 +131,31 @@ class AddRoom:
                 bed_number=int(self.room_bed_number_var.get()),
                 oid=oids[0]
             )
-            messagebox.showinfo('成功', '新建病房成功!')
             session.add(room)
+            session.commit()
+            messagebox.showinfo('成功', '新建病房成功!')
         except Exception as _:
-            messagebox.showinfo('失败', '新建病房失败')
-        session.commit()
+            messagebox.showerror('失败', '新建病房失败，病房可能已存在或科室选择错误')
+        session.close()
+        self.refresh_table()
+
+    def change(self):
+        session = DBSession()
+        oids = [office['id'] for office in self.offices if office['name'] == self.office_name_var.get()]
+        num = self.room_number_var.get()
+        room: Optional[Room] = session.query(Room).filter_by(
+            room_number=num
+        ).first()
+
+        try:
+            if room:
+                room.bed_number = int(self.room_bed_number_var.get())
+                room.oid = oids[0]
+                session.commit()
+                messagebox.showinfo('成功', '病房信息修改成功!')
+            else:
+                messagebox.showerror('错误', '找不到病房！')
+        except Exception as _:
+            messagebox.showinfo('失败', '病房信息修改失败')
         session.close()
         self.refresh_table()

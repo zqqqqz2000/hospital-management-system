@@ -50,9 +50,11 @@ class AddDoctor:
         gender_frame.pack(side=TOP)
         gender_label = Label(gender_frame, text='性别')
         gender_label.pack(side=LEFT)
-        self.gender_var = StringVar()
-        gender_entry = Entry(gender_frame, textvariable=self.gender_var)
-        gender_entry.pack(side=LEFT)
+        self.gender_var = IntVar()
+        r1 = Radiobutton(gender_frame, variable=self.gender_var, value=0, text="女")
+        r2 = Radiobutton(gender_frame, variable=self.gender_var, value=1, text="男")
+        r1.pack(side=LEFT)
+        r2.pack(side=LEFT)
 
         # 年龄Frame
         age_frame = Frame(self.page)
@@ -84,8 +86,12 @@ class AddDoctor:
         self.office_name_com.pack(side=LEFT)
 
         # 提交按钮
-        commit_button = Button(self.page, text='提交', command=self.insert_doctor)
-        commit_button.pack(side=TOP)
+        btn_frame = Frame(self.page)
+        commit_button = Button(btn_frame, text='提交', command=self.insert_doctor)
+        commit_button.pack(side=LEFT)
+        commit_button = Button(btn_frame, text='修改', command=self.change)
+        commit_button.pack(side=LEFT)
+        btn_frame.pack(side=TOP)
 
         # 表格
         self.tb = ttk.Treeview(self.page, columns=('0', '1', '2', '3', '4', '5', '6'), show="headings")
@@ -158,14 +164,33 @@ class AddDoctor:
         self.page.destroy()
         ChoiceMenu(self.root)
 
+    def change(self):
+        session = DBSession()
+        oids = [office['id'] for office in self.offices if office['name'] == self.office_name_var.get()]
+        gender = self.gender_var.get()
+        doctor: Doctor = session.query(Doctor).filter_by(
+            work_number=self.work_number_var.get()
+        ).first()
+        try:
+            if doctor:
+                doctor.name = self.name_var.get()
+                doctor.gender = gender
+                doctor.age = self.age_var.get()
+                doctor.title = self.title_var.get()
+                doctor.oid = oids[0]
+                session.commit()
+                messagebox.showinfo('成功', '修改医生信息成功!')
+            else:
+                messagebox.showerror('错误', '找不到医生')
+        except Exception as _:
+            messagebox.showinfo('失败', '新建医生失败')
+        session.close()
+        self.refresh_table()
+
     def insert_doctor(self):
         session = DBSession()
         oids = [office['id'] for office in self.offices if office['name'] == self.office_name_var.get()]
         gender = self.gender_var.get()
-        if gender == '男':
-            gender = 1
-        else:
-            gender = 0
         try:
             room = Doctor(
                 work_number=self.work_number_var.get(),
@@ -175,10 +200,10 @@ class AddDoctor:
                 title=self.title_var.get(),
                 oid=oids[0]
             )
-            messagebox.showinfo('成功', '新建医生成功!')
             session.add(room)
+            session.commit()
+            messagebox.showinfo('成功', '新建医生成功!')
         except Exception as _:
-            messagebox.showinfo('失败', '新建医生失败')
-        session.commit()
+            messagebox.showerror('失败', '新建医生失败，医生可能已存在')
         session.close()
         self.refresh_table()

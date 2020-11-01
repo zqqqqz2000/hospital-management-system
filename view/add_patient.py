@@ -68,9 +68,11 @@ class AddPatient:
         gender_frame.pack(side=TOP)
         gender_label = Label(gender_frame, text='性别')
         gender_label.pack(side=LEFT)
-        self.gender_var = StringVar()
-        gender_entry = Entry(gender_frame, textvariable=self.gender_var)
-        gender_entry.pack(side=LEFT)
+        self.gender_var = IntVar()
+        r1 = Radiobutton(gender_frame, variable=self.gender_var, value=0, text="女")
+        r2 = Radiobutton(gender_frame, variable=self.gender_var, value=1, text="男")
+        r1.pack(side=LEFT)
+        r2.pack(side=LEFT)
 
         # 年龄Frame
         age_frame = Frame(self.page)
@@ -121,8 +123,12 @@ class AddPatient:
         dig_entry.pack(side=LEFT)
 
         # 提交按钮
-        commit_button = Button(self.page, text='提交', command=self.insert_patient)
-        commit_button.pack(side=TOP)
+        btn_frame = Frame(self.page)
+        commit_button = Button(btn_frame, text='提交', command=self.insert_patient)
+        commit_button.pack(side=LEFT)
+        commit_button = Button(btn_frame, text='修改', command=self.change)
+        commit_button.pack(side=LEFT)
+        btn_frame.pack(side=TOP)
 
         # 表格
         self.tb = ttk.Treeview(self.page, columns=('0', '1', '2', '3', '4', '5', '6', '7', '8'), show="headings")
@@ -218,10 +224,6 @@ class AddPatient:
         dids = [doctor['id'] for doctor in self.doctors if doctor['name'] == self.doctor_var.get()]
         rids = [room['id'] for room in self.rooms if room['room_number'] == self.room_var.get()]
         gender = self.gender_var.get()
-        if gender == '男':
-            gender = 1
-        else:
-            gender = 0
         try:
             patient = Patient(
                 did=dids[0],
@@ -237,6 +239,33 @@ class AddPatient:
             session.add(patient)
         except Exception as _:
             messagebox.showinfo('失败', '新建患者失败')
+        session.commit()
+        session.close()
+        self.refresh_table()
+
+    def change(self):
+        session = DBSession()
+        oids = [office['id'] for office in self.offices if office['name'] == self.office_name_var.get()]
+        dids = [doctor['id'] for doctor in self.doctors if doctor['name'] == self.doctor_var.get()]
+        rids = [room['id'] for room in self.rooms if room['room_number'] == self.room_var.get()]
+        gender = self.gender_var.get()
+        patient: Patient = session.query(Patient).filter_by(
+            history_number=self.history_number_var.get()
+        ).first()
+        try:
+            if patient:
+                patient.did = dids[0]
+                patient.rid = rids[0]
+                patient.oid = oids[0]
+                patient.name = self.name_var.get()
+                patient.gender = gender
+                patient.age = self.age_var.get()
+                patient.diagnose = self.dig_var.get()
+                messagebox.showinfo('成功', '修改病人信息成功')
+            else:
+                messagebox.showerror('错误', '找不到病人')
+        except Exception as _:
+            messagebox.showinfo('失败', '修改病人信息失败')
         session.commit()
         session.close()
         self.refresh_table()

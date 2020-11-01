@@ -45,8 +45,12 @@ class AdminOfficeManage:
         office_addr_entry.pack(side=LEFT)
 
         # 提交按钮
-        commit_button = Button(self.page, text='提交', command=self.insert_office)
-        commit_button.pack(side=TOP)
+        btn_frame = Frame(self.page)
+        commit_button = Button(btn_frame, text='提交', command=self.insert_office)
+        commit_button.pack(side=LEFT)
+        commit_button = Button(btn_frame, text='修改', command=self.change)
+        commit_button.pack(side=LEFT)
+        btn_frame.pack(side=TOP)
 
         # 表格
         self.tb = ttk.Treeview(self.page, columns=('0', '1', '2', '3'), show="headings")
@@ -65,6 +69,22 @@ class AdminOfficeManage:
         # 返回按钮
         return_button = Button(self.page, text='返回', command=self.back)
         return_button.pack(side=TOP)
+
+    def change(self):
+        name = self.office_name_var.get()
+        session = DBSession()
+        office: Optional[Office] = session.query(Office).filter_by(
+            office_name=name
+        ).first()
+        if office:
+            office.office_address = self.office_addr_var.get()
+            office.office_telephone = self.office_tele_var.get()
+            session.commit()
+            messagebox.showinfo('成功', '修改科室信息成功')
+        else:
+            messagebox.showerror('找不到科室', f'找不到名为 {name} 的科室.')
+        session.close()
+        self.refresh_table()
 
     def back(self):
         from view.menu import ChoiceMenu
@@ -115,10 +135,10 @@ class AdminOfficeManage:
                 office_address=self.office_addr_var.get(),
                 office_telephone=self.office_tele_var.get()
             )
-            messagebox.showinfo('成功', '新建科室成功!')
             session.add(office)
+            session.commit()
+            messagebox.showinfo('成功', '新建科室成功!')
         except Exception as _:
-            messagebox.showinfo('失败', '新建科室失败')
-        session.commit()
+            messagebox.showerror('失败', '新建科室失败，科室已存在')
         session.close()
         self.refresh_table()

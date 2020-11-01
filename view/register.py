@@ -15,6 +15,10 @@ class Register:
         self.root.title('注册')
         self.root.geometry('240x110')
 
+        # 上方空出20px
+        padding_top = Frame(self.page, height=20)
+        padding_top.pack(side=TOP)
+
         # 账号Frame
         username_frame = Frame(self.page)
         username_frame.pack(side=TOP)
